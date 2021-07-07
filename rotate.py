@@ -14,8 +14,8 @@ print(len(list_img[0][0]))
 
 
 def getRotateM(angle):
-    c = cos(angle*pi/180)
-    s = sin(angle*pi/180)
+    c = cos(-angle*pi/180)
+    s = sin(-angle*pi/180)
     return [[c, -s], [s, c]]
 
 
