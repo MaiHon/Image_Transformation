@@ -13,27 +13,36 @@ print(len(list_img[0]))
 print(len(list_img[0][0]))
 
 
-def getRotateM(angle):
-    c = cos(-angle*pi/180)
-    s = sin(-angle*pi/180)
-    return [[c, -s], [s, c]]
+def getMat(scale, angle, translation=None):
+    if translation is None:
+        translation = [0, 0]
+    
+    scale = 1./scale   
+    c = scale*cos(-angle*pi/180)
+    s = scale*sin(-angle*pi/180)
+    return [[c, -s, translation[0]], [s, c, translation[1]]]
 
 
-def rotate(cx, cy, px, py, M):
-    nx = cx + (px-cx) * M[0][0] + (py-cy) * M[0][1]
-    ny = cy + (px-cx) * M[1][0] + (py-cy) * M[1][1]
+def affine(centre, point, scale, M):
+    nx = centre[0] + (point[0]-centre[0]*scale) * M[0][0] + (point[1]-centre[1]*scale) * M[0][1] + M[0][2]/scale
+    ny = centre[1] + (point[0]-centre[0]*scale) * M[1][0] + (point[1]-centre[1]*scale) * M[1][1] + M[1][2]/scale
     return nx, ny
 
 
 H, W, C = len(list_img), len(list_img[0]), len(list_img[0][0])
 
+scale = 1.7
 angle = 137
-M = getRotateM(angle)
-cx, cy = H//2, W//2
-tmp_img = [[[0]*C for _ in range(W)] for _ in range(H)]
-for x in range(len(list_img)):
-    for y in range(len(list_img[0])):
-        nx, ny = rotate(cx, cy, x, y, M)
+translation = [30, -30]
+M = getMat(scale, angle, translation)
+
+centre = [H//2, W//2]
+scaled_H, scaled_W = int(H*scale), int(W*scale)
+tmp_img = [[[0]*C for _ in range(scaled_W)] for _ in range(scaled_H)]
+
+for x in range(scaled_H):
+    for y in range(scaled_W):
+        nx, ny = affine(centre, (x, y), scale, M)
         if 0 <= nx <= H-1 and 0 <= ny <= W-1:
             nx_f = floor(nx)
             nx_c = ceil(nx)
