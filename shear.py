@@ -1,9 +1,25 @@
 import cv2
+from math import tan
 from math import floor, ceil
 import numpy as np
 
 
-def scaleing(img, scale):
+def getShearMat(angles):
+    if isinstance(angles, int):
+        angles = [angles]*2
+
+    shear_x = -tan(-angles[0]/2)
+    shear_y = -tan(-angles[1]/2)
+    return [[1, shear_x], [shear_y, 1]]
+
+
+def shearPos(cx, cy, px, py, M):
+    nx = cx + (px-cx) * M[0][0] + (py-cy) * M[0][1]
+    ny = cy + (px-cx) * M[1][0] + (py-cy) * M[1][1]
+    return nx, ny
+
+
+def shear(img, angles=[0, 20]):
     if isinstance(img, np.ndarray):
         img = img.tolist()
     elif isinstance(img, list):
@@ -11,21 +27,15 @@ def scaleing(img, scale):
     else:
         raise TypeError("Only support ndarray or list type img")
 
-    if isinstance(scale, float) or isinstance(scale, int):
-        scale = [scale] * 2
-
-    if scale[0] == 0 or scale[1] == 0:
-        raise ZeroDivisionError("scale cannot be 0.")
-
-
+    M = getShearMat(angles)
     H, W, C = len(img), len(img[0]), len(img[0][0])
-    scaled_H, scaled_W = int(H*scale[0]), int(W*scale[1])
+    cx, cy = H//2, W//2
 
-    tmp_img = [[[0]*C for _ in range(scaled_W)] for _ in range(scaled_H)]
-    for x in range(scaled_H):
-        for y in range(scaled_W):
-            nx, ny = x/scale[0], y/scale[1]
-            
+    tmp_img = [[[0]*C for _ in range(W)] for _ in range(H)]
+    for x in range(len(img)):
+        for y in range(len(img[0])):
+            nx, ny = shearPos(cx, cy, x, y, M)
+
             if 0 <= nx <= H-1 and 0 <= ny <= W-1:
                 nx_f = floor(nx)
                 nx_c = ceil(nx)
@@ -55,9 +65,9 @@ if __name__ == "__main__":
     np_img = cv2.imread(img_path)
     list_img = np_img.tolist()
 
-    scaled_img = scaleing(list_img, scale=1.7)
-    scaled_img = np.array(scaled_img).astype(np.uint8)
-    cv2.imshow("Scaled Img", scaled_img)
+    sheared_img = shear(list_img, angles=[0, 20])
+    sheared_img = np.array(sheared_img).astype(np.uint8)
+    cv2.imshow("Sheared Img", sheared_img)
     cv2.imshow("Original Img", np_img)
     cv2.waitKey()
     cv2.destroyAllWindows()
